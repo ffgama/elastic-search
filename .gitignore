@@ -1,5 +1,3 @@
 *.code-workspace
 *.csv
-*/.vscode 
-*/__pycache__/
-*__init__.py
+*.pyc
