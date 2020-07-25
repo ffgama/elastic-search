@@ -38,24 +38,36 @@ dataset_state[['latitude', 'longitude']] = \
 dataset_state_sub = dataset_state.iloc[50:200:,]
 
 # random select 
-dataset_visited_state = dataset_state_sub.sample(n=100, replace=True, random_state=42).reset_index()
+dataset_visited_state = dataset_state_sub.sample(n=100, 
+                                                replace=True, 
+                                                random_state=42).reset_index()
 
-dataset_visited_state["person_id"] = random.randint(low=1, high=8, size=dataset_visited_state.shape[0])
+dataset_visited_state["person_id"] = random.randint(
+                                                low=1, 
+                                                high=8, 
+                                                size=dataset_visited_state.shape[0])
 
-dataset_visited_state.columns = [col.lower() for col in dataset_visited_state.columns]
+dataset_visited_state.columns = [col.lower() 
+                                 for col in dataset_visited_state.columns]
 
-columns_choosen = ["city","state","population","coordinates",
-                   "person_id","latitude","longitude"]
+columns_choosen = ["city",
+                   "state",
+                   "population",
+                   "coordinates",
+                   "person_id",
+                   "latitude",
+                   "longitude"]
+
 dataset_visited_state = dataset_visited_state[columns_choosen] 
 
+
 # create new columns
-# number of visitations 
-dataset_visited_state["tot_visited_state"] = dataset_visited_state.groupby("state")["person_id"].transform("count")
-dataset_visited_state["tot_visited_city"] = dataset_visited_state.groupby("city")["person_id"].transform("count")
 
 # (high recurrence): the same people had  come back the place (high recurrence)
-dataset_visited_state["recurrence_state"] = dataset_visited_state.groupby(["state"])["person_id"].transform("nunique")
-dataset_visited_state["recurrence_city"] = dataset_visited_state.groupby(["city"])["person_id"].transform("nunique")
+# dataset_visited_state["recurrence_state"] = \
+#     dataset_visited_state.groupby(["state"])["person_id"].transform("nunique")
+# dataset_visited_state["recurrence_city"] = \
+#     dataset_visited_state.groupby(["city"])["person_id"].transform("nunique")
             
 # insert a data (document) into a INDEX         
 for row in range(0, len(dataset_visited_state)):    
@@ -67,7 +79,8 @@ for row in range(0, len(dataset_visited_state)):
 
 
 # show all documents that has been inserted
-all_docs = [es.get(index=INDEX_NAME, id=doc) for doc in range(0, len(dataset_visited_state))]
+all_docs = [es.get(index=INDEX_NAME, id=doc) 
+            for doc in range(0, len(dataset_visited_state))]
 all_docs
 
 # only data
@@ -105,6 +118,44 @@ es.search(index=INDEX_NAME,
                                         "must_not": {"match": {"city":"Texarkana"} },
                                         "should": {"match": {"state":"Texas"} }
                                         } } } )
+
+# Aggregations
+es.search(index=INDEX_NAME,
+          body={"size":0, "aggs": 
+            {"avg_tot_visited":
+                {"avg": 
+                    {"field":"tot_visited_state"} 
+                }
+            }})
+
+
+# REPLACE:
+# number of visitations 
+# dataset_visited_state["tot_visited_state"] = \
+#     dataset_visited_state.groupby("state")["person_id"].transform("count")
+# dataset_visited_state["tot_visited_city"] = \
+#     dataset_visited_state.groupby("city")["person_id"].transform("count")
+
+# REPLACE TO:
+es.search(index=INDEX_NAME,
+          body={"size":0, 
+                "query":{
+                    "bool":{
+                        "must": [
+                            {"match": {"city":"Calexico"}},    
+                            {"match": {"state":"California"}}
+                        ]
+                    }
+            },
+                "aggs":{
+                    "tot_visited_city_state":{
+                        "value_count":{
+                                "field":"person_id"}
+                            }
+                    }   
+        })
+
+
 
 # Regex
 #  all states that begin with "i" letter
