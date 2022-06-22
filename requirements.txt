@@ -1,5 +1,5 @@
 elasticsearch>=6.0.0,<7.0.0
 pandas==1.0.4
-numpy==1.19.0
+numpy==1.22.0
 geopandas==0.8.0
 Shapely==1.7.0
